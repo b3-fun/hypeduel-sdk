@@ -1,0 +1,32 @@
+{
+  "name": "@b3dotfun/hypeduel-sdk",
+  "version": "0.0.1",
+  "description": "TypeScript SDK for Hypeduel API",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "prepublishOnly": "pnpm build"
+  },
+  "keywords": [
+    "hypeduel",
+    "sdk",
+    "api",
+    "websocket",
+    "typescript"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {}
+}
+
+
