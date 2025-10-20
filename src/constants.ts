@@ -1,0 +1,1 @@
+export const INSTANCER_SERVER_URL="https://ml-worker.hypeduel.com/"
