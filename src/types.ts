@@ -278,37 +278,19 @@ export interface WebhookPayload {
     matchId: string;
     authToken: string;
     wsUrl: string;
+    jwtData?: string;
 }
 
 /**
  * SDK configuration options
  */
 export interface SDKConfig {
-    /** Optional webhook verification secret */
-    webhookSecret?: string;
+    /** Webhook verification secret */
+    gameSecret: string;
     /** Callback invoked when a match starts and WebSocket connects */
     onMatchStart?: (matchClient: any) => void | Promise<void>;
     /** Global error handler */
     onError?: (error: Error) => void;
     /** Enable debug logging */
     debug?: boolean;
-}
-
-// Framework Request/Response types
-/**
- * Generic webhook request interface
- */
-export interface WebhookRequest {
-    body: any;
-    headers: Record<string, string | string[] | undefined>;
-    method: string;
-}
-
-/**
- * Generic webhook response interface
- */
-export interface WebhookResponse {
-    status(code: number): WebhookResponse;
-    json(data: any): WebhookResponse;
-    send(data: any): WebhookResponse;
 }

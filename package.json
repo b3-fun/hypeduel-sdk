@@ -1,6 +1,6 @@
 {
   "name": "@b3dotfun/hypeduel-sdk",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "TypeScript SDK for integrating HypeDuel match services into your Node.js application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -49,6 +49,8 @@
     "typescript": "^5.3.0"
   },
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "jsonwebtoken": "^9.0.2",
     "ws": "^8.16.0"
   },
   "packageManager": "pnpm@10.15.1"

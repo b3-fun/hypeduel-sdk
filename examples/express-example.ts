@@ -60,7 +60,7 @@ class DemoGame {
 // Initialize the SDK with configuration
 const sdk = new HypeDuelSDK({
     debug: true,
-    webhookSecret: process.env.HYPEDUEL_WEBHOOK_SECRET,
+    gameSecret: process.env.HYPEDUEL_WEBHOOK_SECRET || '',
     onMatchStart: async (matchClient) => {
         console.log(`Match started: ${matchClient.matchId}`);
         

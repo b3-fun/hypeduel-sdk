@@ -1,5 +1,6 @@
 import { MatchClient } from './match-client';
 import { SDKConfig, WebhookPayload } from './types';
+import jwt from 'jsonwebtoken';
 
 /**
  * HypeDuelSDK - Main SDK class for integrating HypeDuel match services
@@ -19,7 +20,7 @@ export class HypeDuelSDK {
     private readonly config: SDKConfig;
     private readonly activeMatches: Map<string, MatchClient> = new Map();
 
-    constructor(config: SDKConfig = {}) {
+    constructor(config: SDKConfig) {
         this.config = config;
     }
 
@@ -35,12 +36,18 @@ export class HypeDuelSDK {
         try {
             this.log(`Received webhook for match: ${payload.matchId}`);
 
-            // Validate webhook secret if configured
-            if (this.config.webhookSecret) {
-                // In a real implementation, you'd verify a signature here
-                // For now, we'll just check if the secret exists
+            if (!payload.jwtData) {
+                throw new Error('Missing jwtData in webhook payload');
             }
-
+            // Verify JWT
+            try {
+                const decoded = jwt.verify(payload.jwtData, this.config.gameSecret) as any;
+                if (decoded.matchId !== payload.matchId) {
+                    throw new Error('Invalid JWT token');
+                }
+            } catch (err){
+                throw new Error('Invalid JWT token');
+            }
             // Validate payload
             this.validatePayload(payload);
 
