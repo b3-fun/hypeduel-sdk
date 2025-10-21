@@ -1,32 +1,55 @@
 {
   "name": "@b3dotfun/hypeduel-sdk",
-  "version": "0.0.1",
-  "description": "TypeScript SDK for Hypeduel API",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for integrating HypeDuel match services into your Node.js application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "example": "tsx examples/express-example.ts",
+    "test:webhook": "tsx examples/test-webhook.ts"
   },
   "keywords": [
     "hypeduel",
     "sdk",
     "api",
     "websocket",
-    "typescript"
+    "typescript",
+    "match",
+    "game",
+    "gaming",
+    "realtime"
   ],
-  "author": "",
+  "author": "B3.fun",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/b3-fun/hypeduel-sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/b3-fun/hypeduel-sdk/issues"
+  },
+  "homepage": "https://github.com/b3-fun/hypeduel-sdk/issues",
+  "engines": {
+    "node": ">=16.0.0"
+  },
   "devDependencies": {
+    "@types/express": "^4.17.21",
     "@types/node": "^20.10.0",
+    "@types/ws": "^8.5.10",
+    "express": "^4.18.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "ws": "^8.16.0"
+  },
+  "packageManager": "pnpm@10.15.1"
 }
-
-

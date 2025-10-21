@@ -1,0 +1,24 @@
+# Source files
+src/
+*.ts
+!*.d.ts
+
+# Development files
+examples/
+tsconfig.json
+pnpm-lock.yaml
+
+# IDE
+.vscode/
+.idea/
+
+# Build artifacts
+*.tsbuildinfo
+
+# Tests
+*.test.ts
+*.spec.ts
+
+# Documentation
+docs/
+
