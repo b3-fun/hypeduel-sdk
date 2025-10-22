@@ -1,5 +1,5 @@
 import WebSocket from 'ws';
-import { AuthenticateMessage, EndFramesMessage, InitFramesMessage, OutgoingMessage, ResponseMessage, SceneFramesMessage, SimFrame, WebhookPayload } from "./types";
+import { AuthenticateMessage, EndFramesMessage, InitFramesMessage, OutgoingMessage, ResponseMessage, SceneFramesMessage, SimFrame, StartMatchWebhookPayload } from "./types";
 
 /**
  * Event map for type-safe event handling
@@ -24,7 +24,7 @@ export class MatchClient {
     private stateIntervalId: NodeJS.Timeout | null = null;
     private trackedState: SimFrame | null = null;
 
-    constructor(webhookPayload: WebhookPayload) {
+    constructor(webhookPayload: StartMatchWebhookPayload) {
         this.authToken = webhookPayload.authToken;
         this.matchId = webhookPayload.matchId;
         this.wsUrl = webhookPayload.wsUrl;

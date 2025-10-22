@@ -1,5 +1,5 @@
 import { MatchClient } from './match-client';
-import { SDKConfig, WebhookPayload } from './types';
+import { SDKConfig, WebhookPayload, GameMatchTeam } from './types';
 import jwt from 'jsonwebtoken';
 
 /**
@@ -26,70 +26,91 @@ export class HypeDuelSDK {
 
     /**
      * Core webhook handler - framework agnostic
-     * Creates a MatchClient, connects to the WebSocket server, and calls onMatchStart
+     * Handles both match start and team request webhooks
      * 
-     * @param payload - Webhook payload containing matchId, authToken, and wsUrl
-     * @returns Promise<MatchClient> - The connected match client
+     * @param payload - Webhook payload
+     * @returns Promise<MatchClient | GameMatchTeam[]> - Connected match client for start_match, or array of teams for request_teams
      * @throws Error if payload validation fails or connection fails
      */
-    async handleWebhook(payload: WebhookPayload): Promise<MatchClient> {
+    async handleWebhook(payload: WebhookPayload): Promise<MatchClient | GameMatchTeam[]> {
         try {
-            this.log(`Received webhook for match: ${payload.matchId}`);
-
+            // Verify JWT for all webhook types
             if (!payload.jwtData) {
                 throw new Error('Missing jwtData in webhook payload');
             }
-            // Verify JWT
+
             try {
-                const decoded = jwt.verify(payload.jwtData, this.config.gameSecret) as any;
-                if (decoded.matchId !== payload.matchId) {
-                    throw new Error('Invalid JWT token');
-                }
-            } catch (err){
+                jwt.verify(payload.jwtData, this.config.gameSecret) as any;
+            } catch (err) {
                 throw new Error('Invalid JWT token');
             }
-            // Validate payload
-            this.validatePayload(payload);
 
-            // Check if match already exists
-            if (this.activeMatches.has(payload.matchId)) {
-                this.log(`Match ${payload.matchId} already exists, returning existing client`);
-                return this.activeMatches.get(payload.matchId)!;
-            }
-
-            // Create match client
-            const matchClient = new MatchClient(payload);
-
-            // Store active match
-            this.activeMatches.set(payload.matchId, matchClient);
-
-            // Connect to WebSocket
-            await matchClient.connect();
-
-            this.log(`Match client connected for: ${payload.matchId}`);
-
-            // Call user's onMatchStart callback if provided
-            if (this.config.onMatchStart) {
-                try {
-                    await this.config.onMatchStart(matchClient);
-                } catch (error) {
-                    this.log(`Error in onMatchStart callback: ${(error as Error).message}`, true);
-                    throw error;
+            // Handle webhook based on call type
+            switch (payload.callType) {
+                case 'request_teams': {
+                    this.log('Received team request webhook');
+                    if (!this.config.onRequestTeams) {
+                        throw new Error('No onRequestTeams callback configured');
+                    }
+                    try {
+                        const teams = await this.config.onRequestTeams();
+                        return teams;
+                    } catch (error) {
+                        this.log(`Error in onRequestTeams callback: ${(error as Error).message}`, true);
+                        throw error;
+                    }
                 }
+
+                case 'start_match': {
+                    this.log(`Received start_match for match: ${payload.matchId}`);
+
+                    // Validate payload
+                    this.validatePayload(payload);
+
+                    // Check if match already exists
+                    if (this.activeMatches.has(payload.matchId)) {
+                        this.log(`Match ${payload.matchId} already exists, returning existing client`);
+                        return this.activeMatches.get(payload.matchId)!;
+                    }
+
+                    // Create match client
+                    const matchClient = new MatchClient(payload);
+
+                    // Store active match
+                    this.activeMatches.set(payload.matchId, matchClient);
+
+                    // Connect to WebSocket
+                    await matchClient.connect();
+
+                    this.log(`Match client connected for: ${payload.matchId}`);
+
+                    // Call user's onMatchStart callback if provided
+                    if (this.config.onMatchStart) {
+                        try {
+                            await this.config.onMatchStart(matchClient);
+                        } catch (error) {
+                            this.log(`Error in onMatchStart callback: ${(error as Error).message}`, true);
+                            throw error;
+                        }
+                    }
+
+                    // Clean up on disconnect
+                    matchClient.on('close', () => {
+                        this.activeMatches.delete(payload.matchId);
+                        this.log(`Match client disconnected: ${payload.matchId}`);
+                    });
+
+                    // Handle errors
+                    matchClient.on('error', (error: Error) => {
+                        this.handleError(error);
+                    });
+
+                    return matchClient;
+                }
+
+                default:
+                    throw new Error(`Unknown webhook call type: ${(payload as any).callType}`);
             }
-
-            // Clean up on disconnect
-            matchClient.on('close', () => {
-                this.activeMatches.delete(payload.matchId);
-                this.log(`Match client disconnected: ${payload.matchId}`);
-            });
-
-            // Handle errors
-            matchClient.on('error', (error: Error) => {
-                this.handleError(error);
-            });
-
-            return matchClient;
         } catch (error) {
             this.handleError(error as Error);
             throw error;
@@ -100,14 +121,16 @@ export class HypeDuelSDK {
      * Validate webhook payload
      */
     private validatePayload(payload: WebhookPayload): void {
-        if (!payload.authToken) {
-            throw new Error('Missing authToken in webhook payload');
-        }
-        if (!payload.matchId) {
-            throw new Error('Missing matchId in webhook payload');
-        }
-        if (!payload.wsUrl) {
-            throw new Error('Missing wsUrl in webhook payload');
+        if (payload.callType === 'start_match') {
+            if (!payload.authToken) {
+                throw new Error('Missing authToken in webhook payload');
+            }
+            if (!payload.matchId) {
+                throw new Error('Missing matchId in webhook payload');
+            }
+            if (!payload.wsUrl) {
+                throw new Error('Missing wsUrl in webhook payload');
+            }
         }
     }
 

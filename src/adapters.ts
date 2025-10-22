@@ -11,13 +11,8 @@ export function createExpressHandler(sdk: HypeDuelSDK) {
     return async (req: any, res: any) => {
         try {
             const payload: WebhookPayload = req.body;
-            const matchClient = await sdk.handleWebhook(payload);
-            
-            res.status(200).json({
-                success: true,
-                matchId: matchClient.matchId,
-                message: 'Webhook received and match client connected'
-            });
+            const result = await sdk.handleWebhook(payload);
+            res.status(200).json(result);
         } catch (error) {
             res.status(400).json({
                 success: false,
@@ -37,13 +32,8 @@ export function createFastifyHandler(sdk: HypeDuelSDK) {
     return async (request: any, reply: any) => {
         try {
             const payload: WebhookPayload = request.body;
-            const matchClient = await sdk.handleWebhook(payload);
-            
-            return reply.status(200).send({
-                success: true,
-                matchId: matchClient.matchId,
-                message: 'Webhook received and match client connected'
-            });
+            const result = await sdk.handleWebhook(payload);
+            return reply.status(200).send(result);
         } catch (error) {
             return reply.status(400).send({
                 success: false,
@@ -63,14 +53,10 @@ export function createKoaHandler(sdk: HypeDuelSDK) {
     return async (ctx: any) => {
         try {
             const payload: WebhookPayload = ctx.request.body;
-            const matchClient = await sdk.handleWebhook(payload);
+            const result = await sdk.handleWebhook(payload);
             
             ctx.status = 200;
-            ctx.body = {
-                success: true,
-                matchId: matchClient.matchId,
-                message: 'Webhook received and match client connected'
-            };
+            ctx.body = result;
         } catch (error) {
             ctx.status = 400;
             ctx.body = {
@@ -95,13 +81,8 @@ export function createNextHandler(sdk: HypeDuelSDK) {
 
         try {
             const payload: WebhookPayload = req.body;
-            const matchClient = await sdk.handleWebhook(payload);
-            
-            res.status(200).json({
-                success: true,
-                matchId: matchClient.matchId,
-                message: 'Webhook received and match client connected'
-            });
+            const result = await sdk.handleWebhook(payload);
+            res.status(200).json(result);
         } catch (error) {
             res.status(400).json({
                 success: false,
@@ -133,14 +114,10 @@ export function createHttpHandler(sdk: HypeDuelSDK) {
         req.on('end', async () => {
             try {
                 const payload: WebhookPayload = JSON.parse(body);
-                const matchClient = await sdk.handleWebhook(payload);
+                const result = await sdk.handleWebhook(payload);
                 
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    success: true,
-                    matchId: matchClient.matchId,
-                    message: 'Webhook received and match client connected'
-                }));
+                res.end(JSON.stringify(result));
             } catch (error) {
                 res.writeHead(400, { 'Content-Type': 'application/json' });
                 res.end(JSON.stringify({
@@ -162,13 +139,8 @@ export function createHonoHandler(sdk: HypeDuelSDK) {
     return async (c: any) => {
         try {
             const payload: WebhookPayload = await c.req.json();
-            const matchClient = await sdk.handleWebhook(payload);
-            
-            return c.json({
-                success: true,
-                matchId: matchClient.matchId,
-                message: 'Webhook received and match client connected'
-            }, 200);
+            const result = await sdk.handleWebhook(payload);
+            return c.json(result, 200);
         } catch (error) {
             return c.json({
                 success: false,

@@ -272,23 +272,65 @@ export type Message = OutgoingMessage | ResponseMessage;
 
 // Webhook Types
 /**
- * Webhook payload structure received from HypeDuel
+ * Base webhook payload interface
  */
-export interface WebhookPayload {
+interface BaseWebhookPayload {
+    callType: string;
+    jwtData: string;
+}
+
+/**
+ * Webhook payload for starting a match
+ */
+export interface StartMatchWebhookPayload extends BaseWebhookPayload {
+    callType: 'start_match';
     matchId: string;
     authToken: string;
     wsUrl: string;
-    jwtData?: string;
 }
+
+/**
+ * Webhook payload for requesting teams
+ */
+export interface RequestTeamsWebhookPayload extends BaseWebhookPayload {
+    callType: 'request_teams';
+    matchId: string;
+}
+
+/**
+ * Union type for all webhook payloads received from HypeDuel
+ */
+export type WebhookPayload = StartMatchWebhookPayload | RequestTeamsWebhookPayload;
 
 /**
  * SDK configuration options
  */
+/**
+ * Represents an agent in a game match team
+ */
+export interface GameMatchTeamAgent {
+    id: string;
+    metadata?: Record<string, any>;
+    count: number;
+}
+
+/**
+ * Represents a team in a game match
+ */
+export interface GameMatchTeam {
+    id: string;
+    name: string;
+    agents: GameMatchTeamAgent[];
+    metadata?: Record<string, any>;
+}
+
 export interface SDKConfig {
     /** Webhook verification secret */
     gameSecret: string;
     /** Callback invoked when a match starts and WebSocket connects */
     onMatchStart?: (matchClient: any) => void | Promise<void>;
+    /** Callback invoked when teams are requested */
+    onRequestTeams?: () => Promise<GameMatchTeam[]>;
     /** Global error handler */
     onError?: (error: Error) => void;
     /** Enable debug logging */

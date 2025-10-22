@@ -60,7 +60,7 @@ class DemoGame {
 // Initialize the SDK with configuration
 const sdk = new HypeDuelSDK({
     debug: true,
-    gameSecret: process.env.HYPEDUEL_WEBHOOK_SECRET || '',
+    gameSecret: 'secret',
     onMatchStart: async (matchClient) => {
         console.log(`Match started: ${matchClient.matchId}`);
         
@@ -104,6 +104,24 @@ const sdk = new HypeDuelSDK({
                 timeSinceLastFrame: 1000 // 1 second between updates
             }]);
         });
+    },
+    onRequestTeams: async () => {
+        return [
+            {
+                id: 'odds',
+                name: 'Odds',
+                agents: [
+                    { id: 'odds', count: 1 },
+                ]
+            },
+            {
+                id: 'evens',
+                name: 'Evens',
+                agents: [
+                    { id: 'evens', count: 1 },
+                ]
+            }
+        ]
     },
     onError: (error) => {
         console.error('SDK Error:', error);
