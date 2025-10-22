@@ -10,6 +10,7 @@ A TypeScript SDK for integrating HypeDuel match services into your Node.js appli
 🎯 **Event-Driven** - Listen to match events with a simple event emitter API  
 🛠️ **Easy Integration** - Drop-in handlers for popular frameworks  
 🎮 **Match Lifecycle** - Simple methods to begin, update, and end matches  
+🤝 **Team Configuration** - Define team compositions via callback when requested  
 
 ## Installation
 
@@ -34,14 +35,29 @@ app.use(express.json());
 
 // Initialize SDK
 const sdk = new HypeDuelSDK({
+    gameSecret: 'your-game-secret', // Required for webhook verification
     debug: true,
+    // Called when HypeDuel requests team configurations
+    onRequestTeams: async () => {
+        return [
+            {
+                id: 'team1',
+                name: 'Team 1',
+                agents: [{ id: 'player', count: 1 }]
+            },
+            {
+                id: 'team2',
+                name: 'Team 2',
+                agents: [{ id: 'opponent', count: 1 }]
+            }
+        ];
+    },
+    // Called when a match starts
     onMatchStart: async (matchClient) => {
         console.log(`Match started: ${matchClient.matchId}`);
         
-        // Begin the match
         matchClient.beginMatch();
         
-        // Send game state updates
         matchClient.sendStateUpdate([{
             transforms: [],
             state: { scores: { player1: 0, player2: 0 } },
@@ -99,18 +115,43 @@ Create an SDK instance with configuration:
 import { HypeDuelSDK } from '@b3dotfun/hypeduel-sdk';
 
 const sdk = new HypeDuelSDK({
-    webhookSecret: process.env.HYPEDUEL_WEBHOOK_SECRET, // Optional
+    gameSecret: process.env.HYPEDUEL_GAME_SECRET, // Required for webhook verification
     debug: true, // Enable debug logging
-    onMatchStart: async (matchClient) => {
-        // Called when a match starts and WebSocket connects
+    // Called when HypeDuel requests team configurations
+    onRequestTeams: async () => {
+        // Return array of teams with their agent compositions
+        return [
+            {
+                id: 'team1',
+                name: 'Team 1',
+                agents: [{ id: 'player', count: 1 }],
+                metadata: { color: 'blue' } // Optional
+            },
+            {
+                id: 'team2',
+                name: 'Team 2',
+                agents: [{ id: 'opponent', count: 1 }],
+                metadata: { color: 'red' } // Optional
+            }
+        ];
     },
+    // Called when a match starts and WebSocket connects
+    onMatchStart: async (matchClient) => {
+        // Your match handling logic
+    },
+    // Global error handler
     onError: (error) => {
-        // Global error handler
+        console.error('SDK Error:', error);
     }
 });
 ```
 
 ### 2. Webhook Handling
+
+The SDK handles two types of webhooks from HypeDuel:
+
+1. **Team Request** (`request_teams`) - Called when HypeDuel needs team configurations
+2. **Match Start** (`start_match`) - Called when a match begins
 
 The SDK provides framework-specific adapters:
 
@@ -121,14 +162,56 @@ The SDK provides framework-specific adapters:
 - `createHttpHandler(sdk)` - Node.js HTTP
 - `createHonoHandler(sdk)` - Hono
 
-Each handler:
+**Team Request Webhook:**
+1. Receives webhook from HypeDuel requesting team configurations
+2. Calls your `onRequestTeams` callback
+3. Returns team structure to HypeDuel
+
+**Match Start Webhook:**
 1. Receives webhook payload with match information
 2. Creates a `MatchClient` instance
 3. Connects to HypeDuel server via WebSocket
 4. Authenticates using the match token
 5. Calls your `onMatchStart` callback
 
-### 3. Match Client
+### 3. Team Configuration
+
+Define team structures via the `onRequestTeams` callback:
+
+```typescript
+const sdk = new HypeDuelSDK({
+    gameSecret: 'your-game-secret',
+    onRequestTeams: async () => {
+        return [
+            {
+                id: 'attackers',
+                name: 'Attackers',
+                agents: [
+                    { id: 'warrior', count: 2 },
+                    { id: 'archer', count: 1 }
+                ],
+                metadata: { color: 'red' }
+            },
+            {
+                id: 'defenders',
+                name: 'Defenders',
+                agents: [
+                    { id: 'shield', count: 2 },
+                    { id: 'healer', count: 1 }
+                ],
+                metadata: { color: 'blue' }
+            }
+        ];
+    }
+});
+```
+
+Each team can have:
+- Multiple agent types with specified counts
+- Optional metadata for custom properties
+- Unique IDs and display names
+
+### 4. Match Client
 
 The `MatchClient` handles WebSocket communication and provides convenient methods for match lifecycle:
 
@@ -193,7 +276,7 @@ matchClient.trackState(gameState, 100);
 gameState.state.scores.player1 = 10;
 ```
 
-### 4. Managing Active Matches
+### 5. Managing Active Matches
 
 Track and manage multiple active matches:
 
@@ -227,7 +310,26 @@ const app = express();
 app.use(express.json());
 
 const sdk = new HypeDuelSDK({
+    gameSecret: process.env.HYPEDUEL_GAME_SECRET || 'your-game-secret',
     debug: true,
+    // Define team configurations
+    onRequestTeams: async () => {
+        return [
+            {
+                id: 'team_red',
+                name: 'Red Team',
+                agents: [{ id: 'player', count: 1 }],
+                metadata: { color: 'red' }
+            },
+            {
+                id: 'team_blue',
+                name: 'Blue Team',
+                agents: [{ id: 'player', count: 1 }],
+                metadata: { color: 'blue' }
+            }
+        ];
+    },
+    // Handle match start
     onMatchStart: async (matchClient) => {
         console.log(`Match started: ${matchClient.matchId}`);
         
@@ -238,7 +340,7 @@ const sdk = new HypeDuelSDK({
         const gameState = {
             transforms: [],
             state: {
-                scores: { player1: 0, player2: 0 },
+                scores: { team_red: 0, team_blue: 0 },
                 time: 0
             },
             timeSinceLastFrame: 0
@@ -255,7 +357,7 @@ const sdk = new HypeDuelSDK({
             
             // Random score updates
             if (Math.random() > 0.7) {
-                gameState.state.scores.player1++;
+                gameState.state.scores.team_red++;
             }
             
             // End game after 30 seconds
@@ -318,9 +420,30 @@ Your webhook endpoint receives this structure:
 
 ```typescript
 interface WebhookPayload {
-    matchId: string;      // Unique match identifier
-    authToken: string;    // Authentication token for WebSocket
-    wsUrl: string;        // WebSocket server URL
+    callType: 'start_match' | 'request_teams';  // Type of webhook
+    jwtData: string;          // JWT for verification
+    
+    // For start_match:
+    matchId?: string;         // Unique match identifier
+    authToken?: string;       // Authentication token for WebSocket
+    wsUrl?: string;           // WebSocket server URL
+}
+```
+
+### Team Configuration Types
+
+```typescript
+interface GameMatchTeam {
+    id: string;                          // Unique team identifier
+    name: string;                        // Display name
+    agents: GameMatchTeamAgent[];        // Array of agents in team
+    metadata?: Record<string, any>;      // Optional custom properties
+}
+
+interface GameMatchTeamAgent {
+    id: string;                          // Agent type identifier
+    count: number;                       // Number of this agent type
+    metadata?: Record<string, any>;      // Optional custom properties
 }
 ```
 
@@ -344,8 +467,9 @@ pnpm example
 
 ```typescript
 interface SDKConfig {
-    webhookSecret?: string;                    // Optional webhook verification secret
+    gameSecret: string;                         // Required: Game secret for webhook verification
     onMatchStart?: (matchClient: MatchClient) => void | Promise<void>;  // Called when match starts
+    onRequestTeams?: () => Promise<GameMatchTeam[]>;  // Called when teams are requested
     onError?: (error: Error) => void;          // Global error handler
     debug?: boolean;                           // Enable debug logging
 }
@@ -353,7 +477,7 @@ interface SDKConfig {
 
 #### Methods
 
-- `handleWebhook(payload: WebhookPayload): Promise<MatchClient>` - Process webhook and create match client
+- `handleWebhook(payload: WebhookPayload): Promise<MatchClient | GameMatchTeam[]>` - Process webhook (returns MatchClient for start_match, teams array for request_teams)
 - `getMatch(matchId: string): MatchClient | undefined` - Get active match by ID
 - `getActiveMatches(): MatchClient[]` - Get all active matches
 - `disconnectMatch(matchId: string): void` - Disconnect specific match
