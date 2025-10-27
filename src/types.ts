@@ -310,7 +310,7 @@ export interface GameMatchMetadata {
     label: string;
     value: string | string[] | Array<{
         label: string;
-        value: string | string[] | GameMatchMetadata[]; 
+        value: string | string[];
         percentage?: number;
         imageUrl?: string;
     }>;
