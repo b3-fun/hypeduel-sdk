@@ -53,7 +53,7 @@ export class HypeDuelSDK {
                         throw new Error('No onRequestTeams callback configured');
                     }
                     try {
-                        const teams = await this.config.onRequestTeams();
+                        const teams = await this.config.onRequestTeams(payload.matchId);
                         return teams;
                     } catch (error) {
                         this.log(`Error in onRequestTeams callback: ${(error as Error).message}`, true);

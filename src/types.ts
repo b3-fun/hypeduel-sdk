@@ -305,12 +305,25 @@ export type WebhookPayload = StartMatchWebhookPayload | RequestTeamsWebhookPaylo
 /**
  * SDK configuration options
  */
+
+export interface GameMatchMetadata {
+    label: string;
+    value: string | string[] | Array<{
+        label: string;
+        value: string | string[] | GameMatchMetadata[]; 
+        percentage?: number;
+        imageUrl?: string;
+    }>;
+    percentage?: number;
+    imageUrl?: string;
+}
+
 /**
  * Represents an agent in a game match team
  */
 export interface GameMatchTeamAgent {
     id: string;
-    metadata?: Record<string, any>;
+    metadata?: GameMatchMetadata[];
     count: number;
 }
 
@@ -321,7 +334,7 @@ export interface GameMatchTeam {
     id: string;
     name: string;
     agents: GameMatchTeamAgent[];
-    metadata?: Record<string, any>;
+    metadata?: GameMatchMetadata[];
 }
 
 export interface SDKConfig {
@@ -330,7 +343,7 @@ export interface SDKConfig {
     /** Callback invoked when a match starts and WebSocket connects */
     onMatchStart?: (matchClient: any) => void | Promise<void>;
     /** Callback invoked when teams are requested */
-    onRequestTeams?: () => Promise<GameMatchTeam[]>;
+    onRequestTeams?: (matchId: string) => Promise<GameMatchTeam[]>;
     /** Global error handler */
     onError?: (error: Error) => void;
     /** Enable debug logging */
