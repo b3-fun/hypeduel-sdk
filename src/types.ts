@@ -308,9 +308,9 @@ export type WebhookPayload = StartMatchWebhookPayload | RequestTeamsWebhookPaylo
 
 export interface GameMatchMetadata {
     label: string;
-    value: string | string[] | Array<{
+    value: string | string[] | boolean | Array<{
         label: string;
-        value: string | string[];
+        value: string | string[] | boolean;
         percentage?: number;
         imageUrl?: string;
     }>;
